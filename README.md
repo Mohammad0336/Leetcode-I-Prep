@@ -3,7 +3,7 @@
 This repository contains my solutions to the **NeetCode 150** problems, organized by topic.  
 Each folder represents a core algorithm/data structure category, and includes my code and notes for learning and reference.
 
-## ?? Structure
+## File Structure
 
 - Arrays & Hashing  
 - Two Pointers  
@@ -24,11 +24,11 @@ Each folder represents a core algorithm/data structure category, and includes my
 - Math & Geometry  
 - Bit Manipulation
 
-## ?? Goal
+## End Goal
 
 To build a strong foundation in Data Structures & Algorithms through consistent practice, preparing for coding interviews and enhancing problem-solving skills.
 
-## ?? Source
+## Problem Source
 
 Problem list curated from: [NeetCode 150](https://neetcode.io/)
 
