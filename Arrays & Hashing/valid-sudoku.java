@@ -1,0 +1,27 @@
+class Solution {
+    public boolean isValidSudoku(char[][] board) {
+        Set<String> seen = new HashSet<>();
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                char num = board[i][j];
+                if (num != '.') {
+                    if (!seen.add(num + " in row " + i) ||
+                        !seen.add(num + " in col " + j) ||
+                        !seen.add(num + " in box " + (i / 3) + "-" + (j / 3))) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+}
+
+// Utilizes a hashset to track seen digits on the board
+// Follows:
+// Each row must contain the digits 1-9 without repetition.
+// Each column must contain the digits 1-9 without repetition.
+// Each of the nine 3 x 3 sub-boxes of the grid must contain the digits 
+// 1-9 without repetition.
+// if these rules are broken it returns false 
