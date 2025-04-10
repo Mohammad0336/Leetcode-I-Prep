@@ -1,0 +1,40 @@
+gcloud compute instances create jrvs-remote-desktop \
+    --project=quick-hub-454114-n5 \
+    --zone=northamerica-northeast2-c \
+    --machine-type=n1-standard-2 \
+    --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default \
+    --metadata=^,@^enable-osconfig=TRUE,@startup-script=\#\!/bin/bash$'\n'$'\n'\#add\ \
+a\ log\ file$'\n'touch\ /tmp/\"_start_\$\(date\ \'\+\%d-\%m-\%Y-\%H:\%M:\%S\'\)\"$'\n'$'\n'\#exit\ if\ this\ script\ has\ been\ executed\ successfully$'\n'if\ ls\ /tmp/_finish_\*\;\ then$'\n'\ \ echo\ \"Instance\ is\ initialized\"$'\n'\ \ echo\ \"exit\"$'\n'\ \ exit\ 0\;$'\n'fi$'\n'$'\n'\#add\ a\ new\ user$'\n'adduser\ rocky$'\n'\#this\ is\ the\ default\ password\ for\ rockstar\ use\ and\ VNC$'\n'password=\"rocky1234\"$'\n'echo\ -e\ \"\$\{password\}\\n\$\{password\}\"\ \|\ passwd\ \"rocky\"\ $'\n'\#grant\ user\ sudo\ privf$'\n'usermod\ -aG\ wheel\ rocky$'\n'\#disable\ sudo\ password\ prompt$'\n'echo\ \'\%wheel\ \ \ \ \ \ \ \ ALL=\(ALL\)\ \ \ \ \ \ \ NOPASSWD:\ ALL\'\ \>\>\ /etc/sudoers$'\n'$'\n'\#Setup\ vnc\ login\ password$'\n'vnc_password=\"\$\{password\}\"$'\n'$'\n'\#Install\ Extra\ Packages\ for\ Enterprise\ Linux\ \(EPEL\).\ Make\ sure\ you\ have\ a\ general\ idea\ of\ what\ EPEL\ contains.$'\n'dnf\ install\ -y\ epel-release\ $'\n'$'\n'\#update\ all\ packages\ on\ the\ system$'\n'dnf\ upgrade\ -y$'\n'$'\n'\#Install\ xfce\ desktop\ GUI$'\n'dnf\ groupinstall\ -y\ \"Xfce\"\ \"base-x\"$'\n'sleep\ 1$'\n'$'\n'\#Install\ vnc\ server\ \(remote\ access\ server\)$'\n'dnf\ install\ -y\ tigervnc-server$'\n'$'\n'\#Install\ some\ common\ tools$'\n'dnf\ install\ -y\ vim\ gvim\ htop\ tree\ wget\ git\ zip\ unzip$'\n'$'\n'\#install\ openjdk1.8\ \(java\ 8\)$'\n'dnf\ install\ -y\ java-1.8.0-openjdk-devel$'\n'$'\n'\#install\ a\ specific\ maven\ version\ \(by\ default,\ yum\ installs\ an\ older\ version\)$'\n'cd\ /tmp$'\n'wget\ https://dlcdn.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz$'\n'tar\ xf\ /tmp/apache-maven-3.8.8-bin.tar.gz\ -C\ /opt$'\n'ln\ -s\ /opt/apache-maven-3.8.8/\ /opt/maven$'\n'\#Edit\ maven\ config\ \(you\ don\'t\ have\ to\ understand\ this\)$'\n'bash\ -c\ \'cat\ \>\ /etc/profile.d/maven.sh\ \<\<\ EOF$'\n'export\ JAVA_HOME=/usr/lib/jvm/jre-openjdk$'\n'export\ M2_HOME=/opt/maven$'\n'export\ MAVEN_HOME=/opt/maven$'\n'export\ PATH=/opt/maven/bin:\$\{PATH\}$'\n'EOF\'$'\n'chmod\ \+x\ /etc/profile.d/maven.sh$'\n'source\ /etc/profile.d/maven.sh$'\n'mvn\ \
+    --version$'\n'cd\ \
+-$'\n'$'\n'\#Edit\ vnc\ config\ \(you\ don\'t\ have\ to\ understand\ this\)$'\n'echo\ \":1=rocky\"\ \>\>\ /etc/tigervnc/vncserver.users$'\n'echo\ \"session=xfce\"\ \>\>\ /etc/tigervnc/vncserver-config-mandatory$'\n'$'\n'bash\ -c\ \"cat\ \>\>\ /etc/tigervnc\ \<\<\ EOF$'\n'session=xfce$'\n'alwaysshared$'\n'EOF\"$'\n'$'\n'bash\ -c\ \"cat\ \>\ /etc/systemd/system/vncserver@:1.service\ \<\<\ EOF$'\n'\[Unit\]$'\n'Description=Remote\ desktop\ service\ \(VNC\)$'\n'After=syslog.target\ network.target$'\n'$'\n'\[Service\]$'\n'Type=forking$'\n'$'\n'\#\ Clean\ any\ existing\ files\ in\ /tmp/.X11-unix\ environment$'\n'ExecStartPre=/bin/sh\ -c\ \'/usr/bin/vncserver\ -kill\ \%i\ \>\ /dev/null\ 2\>\&1\ \|\|\ :\'$'\n'ExecStart=/usr/sbin/runuser\ -l\ rocky\ -c\ \\\"/usr/bin/vncserver\ \%i\ -geometry\ 1280x1024\\\"$'\n'PIDFile=/home/rocky/.vnc/\%H\%i.pid$'\n'ExecStop=/bin/sh\ -c\ \'/usr/bin/vncserver\ -kill\ \%i\ \>\ /dev/null\ 2\>\&1\ \|\|\ :\'$'\n'$'\n'\[Install\]$'\n'WantedBy=multi-user.target$'\n'EOF\"$'\n'sleep\ 1$'\n'$'\n'\#Enable\ vnc\ config.\ Make\ sure\ you\ know\ what\'s\ \`systemctl\`\ command$'\n'systemctl\ daemon-reload$'\n'systemctl\ enable\ vncserver@:1.service$'\n'sleep\ 1$'\n'systemctl\ start\ vncserver@:1$'\n'$'\n'\#setup\ vnc\ password$'\n'su\ -\ rocky\ -c\ \"printf\ \\\"\$vnc_password\\n\$vnc_password\\n\\n\\\"\ \|\ vncpasswd\"$'\n'$'\n'\#fix\ xfce\ black\ screen\ issue\ \(you\ don\'t\ have\ to\ understand\ this\)$'\n'bash\ -c\ \'cat\ \>\ /home/rocky/.vnc/xstartup\ \<\<\ EOF$'\n'\#\!/bin/sh$'\n'$'\n'unset\ SESSION_MANAGER$'\n'unset\ DBUS_SESSION_BUS_ADDRESS$'\n'exec\ startxfce4$'\n'vncserver\ -kill\ \\\$DISPLAY$'\n'EOF\'$'\n'chmod\ \+x\ /home/rocky/.vnc/xstartup$'\n'cat\ /home/rocky/.vnc/xstartup$'\n'chown\ -R\ rocky:rocky\ /home/rocky/$'\n'$'\n'\#Start\ vnc\ server\ \(VNC\ is\ a\ client-server\ architecture\)$'\n'su\ -\ rocky\ -c\ vncserver$'\n'sleep\ 1$'\n'su\ -\ rocky\ -c\ \"vncserver\ -list\"$'\n'sleep$'\n'$'\n'\#install\ chromium$'\n'sudo\ dnf\ install\ -y\ chromium$'\n'$'\n'\#create\ a\ finish\ file\ \(this\ indicate\ this\ script\ is\ finished\)$'\n'touch\ /tmp/\"_finish_\$\(date\ \'\+\%d-\%m-\%Y-\%H:\%M:\%S\'\)\"$'\n'$'\n'exit\ 0 \
+    --maintenance-policy=MIGRATE \
+    --provisioning-model=STANDARD \
+    --service-account=604286236566-compute@developer.gserviceaccount.com \
+    --scopes=https://www.googleapis.com/auth/cloud-platform \
+    --tags=vnc,http-server,https-server \
+    --create-disk=auto-delete=yes,boot=yes,device-name=jrvs-remote-desktop,image=projects/rocky-linux-cloud/global/images/rocky-linux-9-optimized-gcp-v20250311,mode=rw,size=32,type=pd-ssd \
+    --no-shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --labels=goog-ops-agent-policy=v2-x86-template-1-4-0,goog-ec-src=vm_add-gcloud \
+    --reservation-affinity=any \
+&& \
+printf 'agentsRule:\n  packageState: installed\n  version: latest\ninstanceFilter:\n  inclusionLabels:\n  - labels:\n      goog-ops-agent-policy: v2-x86-template-1-4-0\n' > config.yaml \
+&& \
+gcloud compute instances ops-agents policies create goog-ops-agent-v2-x86-template-1-4-0-northamerica-northeast2-c \
+    --project=quick-hub-454114-n5 \
+    --zone=northamerica-northeast2-c \
+    --file=config.yaml \
+&& \
+gcloud compute resource-policies create snapshot-schedule default-schedule-1 \
+    --project=quick-hub-454114-n5 \
+    --region=northamerica-northeast2 \
+    --max-retention-days=14 \
+    --on-source-disk-delete=keep-auto-snapshots \
+    --daily-schedule \
+    --start-time=08:00 \
+&& \
+gcloud compute disks add-resource-policies jrvs-remote-desktop \
+    --project=quick-hub-454114-n5 \
+    --zone=northamerica-northeast2-c \
+    --resource-policies=projects/quick-hub-454114-n5/regions/northamerica-northeast2/resourcePolicies/default-schedule-1
